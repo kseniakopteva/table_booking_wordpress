@@ -43,10 +43,10 @@
 <section class="row p-5">
     <h2>Explore Restaurants by City</h2>
 
-    <ul class="list-unstyled">
+    <ul class="list-unstyled fs-5">
         <?php
         foreach ($parent_cities as $city) : ?>
-            <li class="m-1"><a style="text-decoration: none" href="<?php echo get_term_link($city->slug, $city->taxonomy) ?>"> <?php echo $city->name ?></a></li>
+            <li class="m-1"><a class="text-primary" style="text-decoration: none" href="<?php echo get_term_link($city->slug, $city->taxonomy) ?>"> <?php echo $city->name ?></a></li>
 
             <?php
             $children = get_terms([
@@ -58,7 +58,7 @@
 
             <ul class="list-unstyled ms-4">
                 <?php foreach ($children as $child_city) : ?>
-                    <li><a style="text-decoration: none" href="<?php echo get_term_link($child_city->slug, $child_city->taxonomy) ?>"> <?php echo $child_city->name ?> </a></li>
+                    <li><a class="text-primary" style="text-decoration: none" href="<?php echo get_term_link($child_city->slug, $child_city->taxonomy) ?>"> <?php echo $child_city->name ?> </a></li>
                 <?php endforeach ?>
             </ul>
         <?php endforeach; ?>

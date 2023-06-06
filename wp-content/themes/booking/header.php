@@ -11,7 +11,7 @@
 
 
 <body class="bg-dark">
-    <div class="container bg-light vh-100">
+    <div class="container bg-light pb-5">
         <div class="row">
             <nav class="navbar navbar-expand-lg bg-light">
                 <div class="container-fluid">

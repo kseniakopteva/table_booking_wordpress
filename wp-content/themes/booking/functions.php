@@ -77,20 +77,21 @@ function bk_register_types()
 		'has_archive'         => true
 	]);
 }
-
+/*
 add_action('save_post_tables', 'bk_save_hours');
 function bk_save_hours($ID)
 {
 	update_post_meta($ID, 'hours', [true, true, true, true, true, true, true, true, true, true, true, true]);
 }
-
-
+*/
+/*
 add_action('add_meta_boxes', 'add_hours_meta_box');
 function add_hours_meta_box()
 {
 	add_meta_box('', 'hours', 'hours_cb');
 }
-
+*/
+/*
 function hours_cb($post)
 {
 ?>
@@ -102,4 +103,20 @@ function hours_cb($post)
 		<?php endforeach; ?>
 	</table>
 <?php
+}*/
+
+
+function get_first_two_sentences($text)
+{
+	$position = stripos($text, '. '); //find first dot position
+
+	if ($position) { //if there's a dot in our soruce text do
+		$offset = $position + 1; //prepare offset
+		$position2 = stripos($text, '. ', $offset); //find second dot using offset
+		$first_two = substr($text, 0, $position2); //put two first sentences under $first_two
+
+		echo $first_two . '.'; //add a dot
+	} else {  //if there are no dots
+		//do nothing
+	}
 }
