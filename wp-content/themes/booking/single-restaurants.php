@@ -7,7 +7,59 @@
             <p><?php echo get_field('description') ?></p>
             <p>Atrodas: <?php the_terms($post->ID, 'cities') ?>, <?php echo get_field('location') ?></p>
         </div>
-        <div><button class="btn btn-primary">Rezervēt galdiņu</button></div>
+        <div><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCenter">Rezervēt galdiņu</button></div>
+    </div>
+
+    <div class="modal fade" id="modalCenter" tabindex="-1" role="dialog" aria-labelledby="modalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalCenterLongTitle">Reserve table</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form>
+                    <div class="modal-body">
+
+                        <div class="row">
+                            <div class="col form-group">
+                                <label for="name">Name</label>
+                                <input class="form-control" type="text" id="name" placeholder="Enter Your Name">
+                            </div>
+                            <div class="col form-group">
+                                <label for="tel">Phone</label>
+                                <input class="form-control" type="tel" name="tel" id="tel" placeholder="Enter Your Phone Number">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col form-group">
+                                <label for="num">Number of People</label>
+                                <input class="form-control" type="text" id="num" placeholder="How many people?">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col form-group">
+                                <label for="date">Date</label>
+                                <input class="form-control" type="date" name="date" id="date">
+                            </div>
+                            <div class="col form-group">
+                                <label for="time">Time</label>
+                                <input class="form-control" type="time" name="time" id="time">
+                            </div>
+                        </div>
+
+                        <button type="button" id="checkIfAvailable" class="btn btn-primary mt-3">Check Availability</button>
+                        <div id="outputAvailability"></div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button id="reserveSubmitBtn" type="submit" class="btn btn-primary" disabled>Save changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
 </div>
