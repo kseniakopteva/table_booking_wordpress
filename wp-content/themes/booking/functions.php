@@ -6,12 +6,15 @@ add_action('init', 'bk_register_types');
 function bk_scripts()
 {
 	wp_enqueue_style('bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css');
-	wp_enqueue_style('bk-style', 'style.css');
+	wp_enqueue_style('bk-style', get_template_directory_uri() . '/style.css');
 
-	wp_enqueue_script('bootstrap-jquery-js', 'https://code.jquery.com/jquery-3.2.1.slim.min.j');
-	wp_enqueue_script('bootstrap-popper-js', 'https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js', ['bootstrap-jquery-js']);
-	wp_enqueue_script('bootstrap-js', 'https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js', ['bootstrap-jquery-js', 'bootstrap-popper-js']);
-	wp_enqueue_script('main-js', get_template_directory_uri() . '/script.js', [], time(), true);
+	wp_enqueue_script('bootstrap-jquery', 'https://code.jquery.com/jquery-3.2.1.slim.min.js');
+	wp_enqueue_script('bootstrap-popper', 'https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js', ['bootstrap-jquery']);
+	wp_enqueue_script('bootstrap-js', 'https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js', ['bootstrap-jquery', 'bootstrap-popper']);
+
+	wp_enqueue_script('jquery-js', 'https://code.jquery.com/jquery-3.7.0.js', [], time(), true);
+
+	wp_enqueue_script('main-js', get_template_directory_uri() . '/script.js', ['jquery-js'], time(), true);
 }
 
 function bk_register_types()
@@ -176,3 +179,58 @@ function bk_restaurants_custom_column($column, $post_id)
 	}
 }
 add_action('manage_restaurants_posts_custom_column', 'bk_restaurants_custom_column', 1, 2);
+
+
+function checkIfAvailable()
+{
+	$str = $_POST['data'];
+
+	$data = [];
+	foreach (explode(";", $str) as $items) {
+		$pair = explode(":", $items);
+		$data[$pair[0]] = $pair[1];
+	}
+
+	// check if available:
+	// --- if there are tables with people = or >
+	// ----- if there are reservations on this date
+	// ------- at this time
+
+
+	$args = [
+		'post_type' => 'tables',
+		'numerposts' => -1,
+		'meta_key' => 'number_of_people',
+		'orderby' => 'meta_value_num',
+		'order' => 'ASC',
+		'meta_query' => [
+			'relation' => 'AND',
+			[
+				'key' => 'restaurant',
+				'value' => $data['restaurantID'],
+				'compare' => '=',
+			],
+			[
+				'key' => 'number_of_people',
+				'value' => $data['num'],
+				'compare' => '>=',
+			],
+		],
+
+	];
+	$all_tables = new WP_Query($args);
+
+	$best_table_ID = $all_tables->posts[0]->ID;
+	$best_table_num = get_field("number_of_people", $all_tables->posts[0]->ID);
+
+	// = get_post_meta($ID, 'product_price', true);
+
+	$arr  = [
+		'ID' => $best_table_ID,
+		'num' => $best_table_num
+	];
+	wp_send_json($arr);
+	wp_die();
+}
+add_action('wp_ajax_nopriv_checkIfAvailable', 'checkIfAvailable');
+add_action('wp_ajax_checkIfAvailable', 'checkIfAvailable');

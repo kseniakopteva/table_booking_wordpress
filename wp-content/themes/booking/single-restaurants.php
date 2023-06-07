@@ -8,7 +8,11 @@
             <p>Atrodas: <?php the_terms($post->ID, 'cities') ?>, <?php echo get_field('location') ?></p>
         </div>
         <div><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCenter">Rezervēt galdiņu</button></div>
+
     </div>
+
+
+
 
     <div class="modal fade" id="modalCenter" tabindex="-1" role="dialog" aria-labelledby="modalCenterTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -19,13 +23,13 @@
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <form>
+                <form id="reservationForm">
                     <div class="modal-body">
 
                         <div class="row">
                             <div class="col form-group">
                                 <label for="name">Name</label>
-                                <input class="form-control" type="text" id="name" placeholder="Enter Your Name">
+                                <input class="form-control" type="text" id="name" name="name" placeholder="Enter Your Name">
                             </div>
                             <div class="col form-group">
                                 <label for="tel">Phone</label>
@@ -35,7 +39,7 @@
                         <div class="row">
                             <div class="col form-group">
                                 <label for="num">Number of People</label>
-                                <input class="form-control" type="text" id="num" placeholder="How many people?">
+                                <input class="form-control" type="text" id="num" name="num" placeholder="How many people?">
                             </div>
                         </div>
                         <div class="row">
@@ -48,7 +52,7 @@
                                 <input class="form-control" type="time" name="time" id="time">
                             </div>
                         </div>
-
+                        <input type="hidden" id="restaurantID" name="restaurantID" value="<?php echo $post->ID ?>">
                         <button type="button" id="checkIfAvailable" class="btn btn-primary mt-3">Check Availability</button>
                         <div id="outputAvailability"></div>
 
@@ -63,4 +67,9 @@
     </div>
 
 </div>
+
+
+
+
+
 <?php get_footer() ?>
