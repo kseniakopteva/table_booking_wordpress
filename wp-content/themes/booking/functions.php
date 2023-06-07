@@ -74,39 +74,45 @@ function bk_register_types()
 		],
 		'public'                => true,
 		'hierarchical'          => true,
-		'has_archive'         => true
+		'has_archive'         => true,
+		'show_admin_column' => true
 	]);
 }
-/*
-add_action('save_post_tables', 'bk_save_hours');
-function bk_save_hours($ID)
+
+add_action('save_post_tables', 'bk_add_reservation_meta');
+function bk_add_reservation_meta($ID)
 {
-	update_post_meta($ID, 'hours', [true, true, true, true, true, true, true, true, true, true, true, true]);
+	update_post_meta($ID, 'reserved_time', "");
 }
-*/
-/*
-add_action('add_meta_boxes', 'add_hours_meta_box');
-function add_hours_meta_box()
+
+
+add_action('add_meta_boxes', 'bk_add_reservation_meta_box');
+function bk_add_reservation_meta_box()
 {
-	add_meta_box('', 'hours', 'hours_cb');
+	add_meta_box('', 'Reservations', 'reservation_cb');
 }
-*/
-/*
-function hours_cb($post)
+
+
+function reservation_cb($post)
 {
 ?>
-	<table>
+	<ul>
 		<?php
-		foreach (get_post_meta($post->ID, 'hours', true) as $key => $value) : ?>
-			<td style="padding: 1rem; color: white; background-color: <?php echo $value ? 'green' : 'red' ?>">
-				<?php echo ($key + 9) . ':00<br>' . ($value ? 'FREE' : 'RESERVED'); ?></td>
-		<?php endforeach; ?>
-	</table>
+		$reservations = array_filter(explode(";", get_post_meta($post->ID, 'Reservations', true)));
+		if (!empty($reservations)) :
+			foreach ($reservations as $key => $value) : ?>
+				<li><?php echo $key ?></li>
+		<?php endforeach;
+		else :
+			echo "No reservations found.";
+		endif;
+		?>
+	</ul>
 <?php
-}*/
+}
 
 
-function get_first_two_sentences($text)
+function bk_get_first_two_sentences($text)
 {
 	$position = stripos($text, '. '); //find first dot position
 
@@ -120,3 +126,50 @@ function get_first_two_sentences($text)
 		//do nothing
 	}
 }
+
+function bk_add_tables_acf_columns($columns)
+{
+	return array_merge($columns, [
+		'restaurant' => __('Restaurant'),
+		'number_of_people'   => __('Number of People')
+	]);
+}
+add_filter('manage_tables_posts_columns', 'bk_add_tables_acf_columns');
+
+
+function bk_tables_custom_column($column, $post_id)
+{
+	switch ($column) {
+		case 'restaurant':
+			echo get_the_title(get_post_meta($post_id, 'restaurant', true));
+			break;
+		case 'number_of_people':
+			echo get_post_meta($post_id, 'number_of_people', true);
+			break;
+	}
+}
+add_action('manage_tables_posts_custom_column', 'bk_tables_custom_column', 1, 2);
+
+
+function bk_add_restaurants_acf_columns($columns)
+{
+	return array_merge($columns, [
+		'location' => __('Location'),
+		'description'   => __('Description')
+	]);
+}
+add_filter('manage_restaurants_posts_columns', 'bk_add_restaurants_acf_columns');
+
+
+function bk_restaurants_custom_column($column, $post_id)
+{
+	switch ($column) {
+		case 'location':
+			echo get_post_meta($post_id, 'location', true);
+			break;
+		case 'description':
+			echo bk_get_first_two_sentences(get_post_meta($post_id, 'description', true)) . ' ... ';
+			break;
+	}
+}
+add_action('manage_restaurants_posts_custom_column', 'bk_restaurants_custom_column', 1, 2);

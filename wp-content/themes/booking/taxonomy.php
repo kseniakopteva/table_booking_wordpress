@@ -30,8 +30,6 @@ else : ?>
 
 
     <?php
-
-
     $the_query = new WP_Query([
         'post_type' => 'restaurants',
         'orderby'   => 'rand',
@@ -43,10 +41,15 @@ else : ?>
             <?php while ($the_query->have_posts()) : $the_query->the_post() ?>
                 <div class="card col-3 m-4 p-0">
                     <img class="card-img-top" src="<?php echo get_field('photo')['sizes']['thumbnail'] ?>" alt="Card image cap">
-                    <div class="card-body">
-                        <h5 class="card-title"><a style="text-decoration: none" href="<?php echo get_permalink() ?>"><?php echo get_the_title() ?></a></h5>
-                        <p class="card-text"><?php get_first_two_sentences(get_field('description')) ?></p>
-                        <a href="<?php the_permalink() ?>" class="btn btn-primary">More</a> <span><?php the_terms($post->ID, 'cities') ?></span>
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <div>
+                            <h5 class="card-title"><a style="text-decoration: none" href="<?php echo get_permalink() ?>"><?php echo get_the_title() ?></a></h5>
+                            <p class="card-text"><?php bk_get_first_two_sentences(get_field('description')) ?></p>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <a href="<?php the_permalink() ?>" class="btn btn-primary">More</a>
+                            <span><?php the_terms($post->ID, 'cities') ?></span>
+                        </div>
                     </div>
                 </div>
 
