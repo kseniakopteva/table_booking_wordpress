@@ -62,6 +62,7 @@
                         <button type="button" id="checkIfAvailable" class="btn btn-primary mt-3">Check Availability</button>
 
                         <div>
+                            <p class="mt-3 text-danger" id="errors"></p>
                             <p class="mt-3" id="outputAvailability"></p>
                         </div>
 

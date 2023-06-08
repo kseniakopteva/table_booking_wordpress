@@ -113,8 +113,8 @@ function bk_register_types()
 	]);
 }
 
-add_action('add_meta_boxes', 'bk_meta_boxes');
-function bk_meta_boxes()
+add_action('add_meta_boxes', 'bk_reservations_meta_boxes');
+function bk_reservations_meta_boxes()
 {
 	$fields = [
 		'bk_creation_date' => 'Reservation Creation Date',
@@ -130,7 +130,7 @@ function bk_meta_boxes()
 		add_meta_box(
 			$slug,
 			$text,
-			'bk_meta_cb',
+			'bk_reservations_meta_cb',
 			'reservations',
 			'advanced',
 			'default',
@@ -139,7 +139,7 @@ function bk_meta_boxes()
 	}
 }
 
-function bk_meta_cb($post_obj, $slug)
+function bk_reservations_meta_cb($post_obj, $slug)
 {
 	$slug = $slug['args'];
 	$data = '';
@@ -199,7 +199,8 @@ function bk_modal_form_handler()
 		]);
 	}
 
-	header('Location: ' . home_url());
+	// header('Location: ' . home_url());
+	header('Location: ' . wp_get_referer());
 }
 
 
@@ -249,14 +250,15 @@ function reservation_cb($post)
 
 
 
-function bk_get_first_two_sentences($text)
+function bk_get_first_sentence($text)
 {
 	$position = stripos($text, '. '); //find first dot position
 
 	if ($position) { //if there's a dot in our soruce text do
-		$offset = $position + 1; //prepare offset
-		$position2 = stripos($text, '. ', $offset); //find second dot using offset
-		$first_two = substr($text, 0, $position2); //put two first sentences under $first_two
+		// $offset = $position + 1; //prepare offset
+		// $position2 = stripos($text, '. ', $offset); //find second dot using offset
+		// $first_two = substr($text, 0, $position2); //put two first sentences under $first_two
+		$first_two = substr($text, 0, $position); //put two first sentences under $first_two
 
 		echo $first_two . '.'; //add a dot
 	} else {  //if there are no dots
@@ -305,18 +307,90 @@ function bk_restaurants_custom_column($column, $post_id)
 			echo get_post_meta($post_id, 'location', true);
 			break;
 		case 'description':
-			echo bk_get_first_two_sentences(get_post_meta($post_id, 'description', true)) . ' ... ';
+			echo bk_get_first_sentence(get_post_meta($post_id, 'description', true)) . ' ... ';
 			break;
 	}
 }
 add_action('manage_restaurants_posts_custom_column', 'bk_restaurants_custom_column', 1, 2);
 
+function bk_add_reservations_acf_columns($columns)
+{
+	return array_merge($columns, [
+		'date_and_time' => __('Reservation date and time'),
+		'restaurant' => __('Restaurant'),
+		'table' => __('Table'),
+		'num' => __('Number of People')
+	]);
+}
+add_filter('manage_reservations_posts_columns', 'bk_add_reservations_acf_columns');
+
+
+function bk_reservations_custom_column($column, $post_id)
+{
+	switch ($column) {
+		case 'date_and_time':
+			echo get_post_meta($post_id, 'bk_date', true) . ' ' . get_post_meta($post_id, 'bk_time', true);
+			break;
+		case 'restaurant':
+			echo get_post(get_post_meta($post_id, 'bk_restaurantID', true))->post_title;
+			break;
+		case 'table':
+			echo get_post(get_post_meta($post_id, 'bk_table', true))->post_title . ' (for ' . get_field('number_of_people', get_post(get_post_meta($post_id, 'bk_table', true))) . ' people)';
+			break;
+		case 'num':
+			echo get_post_meta($post_id, 'bk_num', true);
+			break;
+	}
+}
+add_action('manage_reservations_posts_custom_column', 'bk_reservations_custom_column', 1, 2);
+
+
+
+
+// =============== SORTING BY TIME AND DATE ============================
+
+if (is_admin() && 'edit.php' == $pagenow && 'MY_POST_TYPE' == $_GET['post_type']) {
+	add_action('pre_get_posts', 'bk_sort_reservation_column_query');
+}
+
+function bk_set_sortable_reservation_columns($columns)
+{
+	$columns['date_and_time'] = 'date_and_time';
+	return $columns;
+}
+add_filter('manage_edit-reservations_sortable_columns', 'bk_set_sortable_reservation_columns');
+
+function bk_sort_reservation_column_query($query)
+{
+	$orderby = $query->get('orderby');
+
+	if ('date_and_time' == $orderby) {
+
+		$meta_query = array(
+			'relation' => 'OR',
+			array(
+				'key' => 'date_and_time',
+				'compare' => 'NOT EXISTS', // see note above
+			),
+			array(
+				'key' => 'date_and_time',
+			),
+		);
+
+		$query->set('meta_query', $meta_query);
+		$query->set('orderby', 'meta_value');
+	}
+}
+
+
+
+
 
 function bk_find_table($restaurant_id, $number_of_people, $date, $time)
 {
-	$all_suitable_tables = new WP_Query([
+	$all_suitable_tables = (new WP_Query([
 		'post_type' => 'tables',
-		'numerposts' => -1,
+		'numberposts' => -1,
 		'meta_key' => 'number_of_people',
 		'orderby' => 'meta_value_num',
 		'order' => 'ASC',
@@ -334,19 +408,20 @@ function bk_find_table($restaurant_id, $number_of_people, $date, $time)
 			],
 		],
 
-	]);
+	]))->posts;
 
 	if (empty($all_suitable_tables)) {
-		return null;
+		$best_table['num'] = -1;
+		return $best_table;
 	}
 
 	$current_datetime = (new DateTime($date, new DateTimeZone('Europe/Riga')))->setTime((new DateTime($time))->format('H'), (new DateTime($time))->format('i'));
 
-	foreach ($all_suitable_tables->posts as $key => $table) {
+	foreach ($all_suitable_tables as $key1 => $table) {
 
-		$all_reservations_for_this_table_on_this_day = new WP_Query([
+		$all_reservations_for_this_table_on_this_day = (new WP_Query([
 			'post_type' => 'reservations',
-			'numerposts' => -1,
+			'numberposts' => -1,
 			'meta_query' => [
 				'relation' => 'AND',
 				[
@@ -360,17 +435,17 @@ function bk_find_table($restaurant_id, $number_of_people, $date, $time)
 					'compare' => '=',
 				],
 			],
-		]);
+		]))->posts;
 
-		if (!empty(array_filter($all_reservations_for_this_table_on_this_day->posts)))
+		if (!empty($all_reservations_for_this_table_on_this_day)) {
 
-			foreach ($all_reservations_for_this_table_on_this_day->posts as $key => $reservation) {
+			foreach ($all_reservations_for_this_table_on_this_day as $key2 => $reservation) {
 
-				$res_date = get_post_meta($reservation->ID, 'bk_date');
-				$res_time = get_post_meta($reservation->ID, 'bk_time');
+				$res_date = get_post_meta($reservation->ID, 'bk_date')[0];
+				$res_time = get_post_meta($reservation->ID, 'bk_time')[0];
 
-				$reserved_datetime = (new DateTime($res_date[0], new DateTimeZone('Europe/Riga')))
-					->setTime((new DateTime($res_time[0]))->format('H'), (new DateTime($res_time[0]))->format('i'));
+				$reserved_datetime = (new DateTime($res_date, new DateTimeZone('Europe/Riga')))
+					->setTime((new DateTime($res_time))->format('H'), (new DateTime($res_time))->format('i'));
 
 				$res_dt_start = new DateTime($reserved_datetime->format('Y-m-d H:i'), new DateTimeZone('Europe/Riga'));
 				$res_dt_end = new DateTime($reserved_datetime->format('Y-m-d H:i'), new DateTimeZone('Europe/Riga'));
@@ -381,14 +456,19 @@ function bk_find_table($restaurant_id, $number_of_people, $date, $time)
 
 				if ($current_datetime >= $res_dt_start && $current_datetime <= $res_dt_end) {
 					// THIS MEANS THIS TABLE IS RESERVED!!!
-					unset($all_suitable_tables->posts[$key]);
+					unset($all_suitable_tables[$key1]);
 					break;
 				}
 			}
+		}
 	}
+	$all_suitable_tables = array_values($all_suitable_tables);
 
-	$best_table['ID'] = $all_suitable_tables->posts[0]->ID;
-	$best_table['num'] = get_field("number_of_people", $all_suitable_tables->posts[0]->ID);
+
+	// $best_table['ID'] = $all_suitable_tables[array_key_first($all_suitable_tables)]->ID;
+	$best_table['ID'] = $all_suitable_tables[0]->ID;
+	// $best_table['num'] = get_field("number_of_people", $all_suitable_tables[array_key_first($all_suitable_tables)]->ID);
+	$best_table['num'] = get_field("number_of_people", $all_suitable_tables[0]->ID);
 	$best_table['date'] = $current_datetime->format('Y-m-d');
 	$best_table['time'] = $current_datetime->format('H:i');
 

@@ -2,7 +2,7 @@
 
 
 <!----------------------------- Search section ----------------------------->
-<section class="row text-center py-5 text-bg-info">
+<section class="row text-center py-5 shadow text-bg-dark bg-gradient">
     <h2 class="mb-3"><?php bloginfo('description') ?></h2>
     <form action="" class="fs-5 flex align-items-center p-3">
         On <input class="p-2" type="date" name="date" id="date">
@@ -40,7 +40,7 @@
 
 
 <!----------------------------- Explore Section ---------------------------->
-<section class="row p-5">
+<section class="row" id="explore">
     <h2>Explore Restaurants by City</h2>
 
     <ul class="list-unstyled fs-5">
@@ -66,4 +66,12 @@
 
 
 </section>
+
+<!----------------------------- Random Section ---------------------------->
+<section>
+    <h2>Check out these restaurants</h2>
+    <?php get_template_part('random-three-restaurants') ?>
+
+</section>
+
 <?php get_footer() ?>
