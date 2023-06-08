@@ -121,6 +121,7 @@ function bk_meta_boxes()
 		'bk_name' => 'Name',
 		'bk_phone' => 'Phone',
 		'bk_num' => 'Number of People',
+		'bk_table' => 'Table',
 		'bk_date' => 'Date',
 		'bk_time' => 'Time',
 		'bk_restaurantID' => 'Restaurant',
@@ -148,6 +149,10 @@ function bk_meta_cb($post_obj, $slug)
 			$data = $post_obj->post_date;
 			break;
 		case 'bk_restaurantID':
+			$id = get_post_meta($post_obj->ID, $slug, true);
+			$data = get_the_title($id);
+			break;
+		case 'bk_table':
 			$id = get_post_meta($post_obj->ID, $slug, true);
 			$data = get_the_title($id);
 			break;
@@ -180,7 +185,7 @@ function bk_modal_form_handler()
 			'bk_name' => $name,
 			'bk_phone' => $phone,
 			'bk_num' => $number_of_people,
-			'bk_table' => bk_find_table($restaurant_id, $number_of_people)['ID'],
+			'bk_table' => bk_find_table($restaurant_id, $number_of_people, $date, $time)['ID'],
 			'bk_date' => $date,
 			'bk_time' => $time,
 			'bk_restaurantID' => $restaurant_id,
@@ -229,7 +234,7 @@ function reservation_cb($post)
 					<td style="border: 1px solid #bababa;"><?php echo get_post_meta($res->ID, 'bk_name')[0] ?></td>
 					<td style="border: 1px solid #bababa;"><?php echo get_post_meta($res->ID, 'bk_phone')[0] ?></td>
 					<td style="border: 1px solid #bababa;"><?php echo get_post_meta($res->ID, 'bk_num')[0] ?></td>
-					<td style="border: 1px solid #bababa;"><?php echo get_post_meta($res->ID, 'bk_table')[0] ?></td>
+					<td style="border: 1px solid #bababa;"><?php echo get_the_title(get_post_meta($res->ID, 'bk_table')[0]) ?></td>
 					<td style="border: 1px solid #bababa;"><?php echo get_post_meta($res->ID, 'bk_date')[0] ?></td>
 					<td style="border: 1px solid #bababa;"><?php echo get_post_meta($res->ID, 'bk_time')[0] ?></td>
 				</tr>
@@ -307,19 +312,9 @@ function bk_restaurants_custom_column($column, $post_id)
 add_action('manage_restaurants_posts_custom_column', 'bk_restaurants_custom_column', 1, 2);
 
 
-
-
-function bk_find_table($restaurant_id, $number_of_people)
+function bk_find_table($restaurant_id, $number_of_people, $date, $time)
 {
-
-	// check if available:
-	// --- if there are tables with people = or >
-	// ----- if there are reservations on this date
-	// ------- at this time
-
-
-
-	$args = [
+	$all_suitable_tables = new WP_Query([
 		'post_type' => 'tables',
 		'numerposts' => -1,
 		'meta_key' => 'number_of_people',
@@ -339,11 +334,63 @@ function bk_find_table($restaurant_id, $number_of_people)
 			],
 		],
 
-	];
-	$all_tables = new WP_Query($args);
+	]);
 
-	$best_table['ID'] = $all_tables->posts[0]->ID;
-	$best_table['num'] = get_field("number_of_people", $all_tables->posts[0]->ID);
+	if (empty($all_suitable_tables)) {
+		return null;
+	}
+
+	$current_datetime = (new DateTime($date, new DateTimeZone('Europe/Riga')))->setTime((new DateTime($time))->format('H'), (new DateTime($time))->format('i'));
+
+	foreach ($all_suitable_tables->posts as $key => $table) {
+
+		$all_reservations_for_this_table_on_this_day = new WP_Query([
+			'post_type' => 'reservations',
+			'numerposts' => -1,
+			'meta_query' => [
+				'relation' => 'AND',
+				[
+					'key' => 'bk_table',
+					'value' => $table->ID,
+					'compare' => '=',
+				],
+				[
+					'key' => 'bk_date',
+					'value' => $date,
+					'compare' => '=',
+				],
+			],
+		]);
+
+		if (!empty(array_filter($all_reservations_for_this_table_on_this_day->posts)))
+
+			foreach ($all_reservations_for_this_table_on_this_day->posts as $key => $reservation) {
+
+				$res_date = get_post_meta($reservation->ID, 'bk_date');
+				$res_time = get_post_meta($reservation->ID, 'bk_time');
+
+				$reserved_datetime = (new DateTime($res_date[0], new DateTimeZone('Europe/Riga')))
+					->setTime((new DateTime($res_time[0]))->format('H'), (new DateTime($res_time[0]))->format('i'));
+
+				$res_dt_start = new DateTime($reserved_datetime->format('Y-m-d H:i'), new DateTimeZone('Europe/Riga'));
+				$res_dt_end = new DateTime($reserved_datetime->format('Y-m-d H:i'), new DateTimeZone('Europe/Riga'));
+
+				// check if time is in range of -2 hours from current +2 from current 
+				$res_dt_start->modify('-2 hour');
+				$res_dt_end->modify('+2 hour');
+
+				if ($current_datetime >= $res_dt_start && $current_datetime <= $res_dt_end) {
+					// THIS MEANS THIS TABLE IS RESERVED!!!
+					unset($all_suitable_tables->posts[$key]);
+					break;
+				}
+			}
+	}
+
+	$best_table['ID'] = $all_suitable_tables->posts[0]->ID;
+	$best_table['num'] = get_field("number_of_people", $all_suitable_tables->posts[0]->ID);
+	$best_table['date'] = $current_datetime->format('Y-m-d');
+	$best_table['time'] = $current_datetime->format('H:i');
 
 	return $best_table;
 }
@@ -355,14 +402,12 @@ function checkIfAvailable()
 	$str = $_POST['data'];
 
 	$data = [];
-	foreach (explode(";", $str) as $items) {
-		$pair = explode(":", $items);
+	foreach (explode("|", $str) as $items) {
+		$pair = explode("^", $items);
 		$data[$pair[0]] = $pair[1];
 	}
 
-	$best_table = bk_find_table($data['restaurantID'], $data['num']); // ADD DATE, TIME
-
-	// = get_post_meta($ID, 'product_price', true);
+	$best_table = bk_find_table($data['restaurantID'], $data['num'], $data['date'], $data['time']);
 
 	wp_send_json($best_table);
 	wp_die();

@@ -67,7 +67,7 @@
 
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="this.form.reset();">Close</button>
                         <button id="reserveSubmitBtn" type="submit" class="btn btn-primary" disabled>Submit reservation</button>
                     </div>
 
