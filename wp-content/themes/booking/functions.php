@@ -83,39 +83,165 @@ function bk_register_types()
 		'has_archive'         => true,
 		'show_admin_column' => true
 	]);
+
+	register_post_type('reservations', [
+		'labels' => [
+			'name'               => 'Reservations',
+			'singular_name'      => 'Reservation',
+			'add_new'            => 'Add reservation',
+			'add_new_item'       => 'Add reservation',
+			'edit_item'          => 'Edit reservation',
+			'new_item'           => 'New reservation',
+			'view_item'          => 'View reservations',
+			'search_items'       => 'Search reservations',
+			'not_found'          => 'No reservations found',
+			'not_found_in_trash' => 'No reservations in trash',
+			'parent_item_colon'  => '',
+			'menu_name'          => 'Reservations',
+		],
+		'public'                 => false,
+		'show_ui'				=> true,
+		'show_in_menu' => true,
+		'menu_position'       => 20,
+		'menu_icon'           => 'dashicons-calendar-alt',
+		'hierarchical'        => false,
+		'supports'            => ['title'], // 'title','editor','author','thumbnail','excerpt','trackbacks','custom-fields','comments','revisions','page-attributes','post-formats'
+		'has_archive'         => true,
+		/*'capabilities' => [
+			'create_posts' => 'do_not_allow'
+		]*/
+	]);
 }
 
-add_action('save_post_tables', 'bk_add_reservation_meta');
-function bk_add_reservation_meta($ID)
+add_action('add_meta_boxes', 'bk_meta_boxes');
+function bk_meta_boxes()
 {
-	update_post_meta($ID, 'reserved_time', "");
+	$fields = [
+		'bk_creation_date' => 'Reservation Creation Date',
+		'bk_name' => 'Name',
+		'bk_phone' => 'Phone',
+		'bk_num' => 'Number of People',
+		'bk_date' => 'Date',
+		'bk_time' => 'Time',
+		'bk_restaurantID' => 'Restaurant',
+	];
+	foreach ($fields as $slug => $text) {
+		add_meta_box(
+			$slug,
+			$text,
+			'bk_meta_cb',
+			'reservations',
+			'advanced',
+			'default',
+			$slug
+		);
+	}
+}
+
+function bk_meta_cb($post_obj, $slug)
+{
+	$slug = $slug['args'];
+	$data = '';
+
+	switch ($slug) {
+		case 'bk_creation_date':
+			$data = $post_obj->post_date;
+			break;
+		case 'bk_restaurantID':
+			$id = get_post_meta($post_obj->ID, $slug, true);
+			$data = get_the_title($id);
+			break;
+		default:
+			$data = get_post_meta($post_obj->ID, $slug, true);
+			$data = $data ? $data : 'No data';
+			break;
+	}
+	echo '<p>' . $data . '</p>';
+}
+
+
+add_action('admin_post_nopriv_modal-form', 'bk_modal_form_handler');
+add_action('admin_post_modal-form', 'bk_modal_form_handler');
+
+function bk_modal_form_handler()
+{
+	$name = wp_strip_all_tags($_POST['name']);
+	$phone = wp_strip_all_tags($_POST['tel']);
+	$number_of_people = wp_strip_all_tags($_POST['num']);
+	$date = wp_strip_all_tags($_POST['date']);
+	$time = wp_strip_all_tags($_POST['time']);
+	$restaurant_id = wp_strip_all_tags($_POST['restaurantID']);
+
+	$bk_post_id = wp_insert_post(wp_slash([
+		'post_title' => 'Reservation ',
+		'post_type' => 'reservations',
+		'post_status' => 'publish',
+		'meta_input' => [
+			'bk_name' => $name,
+			'bk_phone' => $phone,
+			'bk_num' => $number_of_people,
+			'bk_table' => bk_find_table($restaurant_id, $number_of_people)['ID'],
+			'bk_date' => $date,
+			'bk_time' => $time,
+			'bk_restaurantID' => $restaurant_id,
+		]
+	]));
+
+	if ($bk_post_id !== 0) {
+		wp_update_post([
+			'ID' => $bk_post_id,
+			'post_title' => 'Reservation ' . $bk_post_id,
+		]);
+	}
+
+	header('Location: ' . home_url());
 }
 
 
 add_action('add_meta_boxes', 'bk_add_reservation_meta_box');
 function bk_add_reservation_meta_box()
 {
-	add_meta_box('', 'Reservations', 'reservation_cb');
+	add_meta_box('', 'Reservations', 'reservation_cb', 'tables');
 }
 
 
 function reservation_cb($post)
 {
+	$reservations = get_posts([
+		'post_type' => 'reservations',
+		'numberposts' => -1,
+		'meta_key' => 'bk_table',
+		'meta_value' => $post->ID
+	]);
 ?>
-	<ul>
-		<?php
-		$reservations = array_filter(explode(";", get_post_meta($post->ID, 'Reservations', true)));
-		if (!empty($reservations)) :
-			foreach ($reservations as $key => $value) : ?>
-				<li><?php echo $key ?></li>
-		<?php endforeach;
-		else :
-			echo "No reservations found.";
-		endif;
-		?>
-	</ul>
-<?php
+	<?php if (!empty(array_filter($reservations))) : ?>
+		<table style="border-collapse: collapse;  width: 100%;">
+			<tr>
+				<th style="border: 1px solid #bababa; background-color: #eee">Name</th>
+				<th style="border: 1px solid #bababa; background-color: #eee">Phone</th>
+				<th style="border: 1px solid #bababa; background-color: #eee">Number Of People</th>
+				<th style="border: 1px solid #bababa; background-color: #eee">Table</th>
+				<th style="border: 1px solid #bababa; background-color: #eee">Date</th>
+				<th style="border: 1px solid #bababa; background-color: #eee">Time</th>
+			</tr>
+			<?php foreach ($reservations as $res) :  ?>
+				<tr>
+					<td style="border: 1px solid #bababa;"><?php echo get_post_meta($res->ID, 'bk_name')[0] ?></td>
+					<td style="border: 1px solid #bababa;"><?php echo get_post_meta($res->ID, 'bk_phone')[0] ?></td>
+					<td style="border: 1px solid #bababa;"><?php echo get_post_meta($res->ID, 'bk_num')[0] ?></td>
+					<td style="border: 1px solid #bababa;"><?php echo get_post_meta($res->ID, 'bk_table')[0] ?></td>
+					<td style="border: 1px solid #bababa;"><?php echo get_post_meta($res->ID, 'bk_date')[0] ?></td>
+					<td style="border: 1px solid #bababa;"><?php echo get_post_meta($res->ID, 'bk_time')[0] ?></td>
+				</tr>
+			<?php endforeach ?>
+		</table>
+	<?php else : ?>
+		<p>No reservations found.</p>
+<?php endif;
 }
+
+
+
 
 
 function bk_get_first_two_sentences($text)
@@ -181,20 +307,16 @@ function bk_restaurants_custom_column($column, $post_id)
 add_action('manage_restaurants_posts_custom_column', 'bk_restaurants_custom_column', 1, 2);
 
 
-function checkIfAvailable()
-{
-	$str = $_POST['data'];
 
-	$data = [];
-	foreach (explode(";", $str) as $items) {
-		$pair = explode(":", $items);
-		$data[$pair[0]] = $pair[1];
-	}
+
+function bk_find_table($restaurant_id, $number_of_people)
+{
 
 	// check if available:
 	// --- if there are tables with people = or >
 	// ----- if there are reservations on this date
 	// ------- at this time
+
 
 
 	$args = [
@@ -207,12 +329,12 @@ function checkIfAvailable()
 			'relation' => 'AND',
 			[
 				'key' => 'restaurant',
-				'value' => $data['restaurantID'],
+				'value' => $restaurant_id,
 				'compare' => '=',
 			],
 			[
 				'key' => 'number_of_people',
-				'value' => $data['num'],
+				'value' => $number_of_people,
 				'compare' => '>=',
 			],
 		],
@@ -220,16 +342,29 @@ function checkIfAvailable()
 	];
 	$all_tables = new WP_Query($args);
 
-	$best_table_ID = $all_tables->posts[0]->ID;
-	$best_table_num = get_field("number_of_people", $all_tables->posts[0]->ID);
+	$best_table['ID'] = $all_tables->posts[0]->ID;
+	$best_table['num'] = get_field("number_of_people", $all_tables->posts[0]->ID);
+
+	return $best_table;
+}
+
+
+
+function checkIfAvailable()
+{
+	$str = $_POST['data'];
+
+	$data = [];
+	foreach (explode(";", $str) as $items) {
+		$pair = explode(":", $items);
+		$data[$pair[0]] = $pair[1];
+	}
+
+	$best_table = bk_find_table($data['restaurantID'], $data['num']); // ADD DATE, TIME
 
 	// = get_post_meta($ID, 'product_price', true);
 
-	$arr  = [
-		'ID' => $best_table_ID,
-		'num' => $best_table_num
-	];
-	wp_send_json($arr);
+	wp_send_json($best_table);
 	wp_die();
 }
 add_action('wp_ajax_nopriv_checkIfAvailable', 'checkIfAvailable');
