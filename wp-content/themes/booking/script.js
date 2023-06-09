@@ -1,5 +1,6 @@
 // Get the modal
 window.onload = function () {
+    AOS.init();
     document.querySelector("#checkIfAvailable").addEventListener("click", () => {
         let formData = new FormData(document.querySelector("#reservationForm"));
 

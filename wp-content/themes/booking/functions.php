@@ -1,16 +1,21 @@
 <?php
 
+add_filter('show_admin_bar', '__return_false');
+
 add_action('wp_enqueue_scripts', 'bk_scripts');
 add_action('init', 'bk_register_types');
 
 function bk_scripts()
 {
 	wp_enqueue_style('bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css');
-	wp_enqueue_style('bk-style', get_template_directory_uri() . '/style.css');
+	wp_enqueue_style('bk-style', get_template_directory_uri() . '/style.css', [], time());
 
 	wp_enqueue_script('bootstrap-jquery', 'https://code.jquery.com/jquery-3.2.1.slim.min.js');
 	wp_enqueue_script('bootstrap-popper', 'https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js', ['bootstrap-jquery']);
 	wp_enqueue_script('bootstrap-js', 'https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js', ['bootstrap-jquery', 'bootstrap-popper']);
+
+	wp_enqueue_style('aos', 'https://unpkg.com/aos@2.3.1/dist/aos.css', [], time());
+	wp_enqueue_script('aos-js', 'https://unpkg.com/aos@2.3.1/dist/aos.js', [], time(), true);
 
 	wp_enqueue_script('jquery-js', 'https://code.jquery.com/jquery-3.7.0.js', [], time(), true);
 
@@ -252,6 +257,9 @@ function reservation_cb($post)
 
 function bk_get_first_sentence($text)
 {
+	echo substr($text, 0, 60) . '...';
+
+	/*
 	$position = stripos($text, '. '); //find first dot position
 
 	if ($position) { //if there's a dot in our soruce text do
@@ -263,7 +271,7 @@ function bk_get_first_sentence($text)
 		echo $first_two . '.'; //add a dot
 	} else {  //if there are no dots
 		//do nothing
-	}
+	}*/
 }
 
 function bk_add_tables_acf_columns($columns)

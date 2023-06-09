@@ -10,14 +10,14 @@
 </head>
 
 
-<body class="bg-secondary">
-    <div class="container-fluid bg-light pb-5">
+<body class="d-flex flex-column min-vh-100 bg-light">
+    <div class="container-fluid">
 
 
         <div class="row">
             <nav class="navbar navbar-expand-lg bg-light">
                 <div class="container-fluid">
-                    <a class="navbar-brand" href="<?php echo home_url() ?>"><?php bloginfo('title') ?></a>
+                    <a class="navbar-brand ms-5" href="<?php echo home_url() ?>"><?php bloginfo('title') ?></a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>

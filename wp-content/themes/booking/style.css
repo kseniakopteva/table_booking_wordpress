@@ -1,3 +1,57 @@
 /*
 Theme Name: Booking
 Text Domain: bk
+*/
+
+body {
+    color: #3C3E20;
+}
+
+a {
+    color: #677338;
+}
+
+a:hover {
+    color: #a1a547;
+
+}
+
+section {
+    padding: 2rem;
+}
+
+footer {
+    color: #d3ef62;
+    background-color: #3C3E20;
+}
+
+.gradient {
+    background: rgb(206, 221, 86);
+    background: linear-gradient(145deg, rgba(206, 221, 86, 1) 0%, rgba(103, 115, 56, 1) 100%);
+}
+
+.explore-list {
+    display: grid;
+    grid-template-rows: repeat(5, min-content);
+    grid-auto-flow: column;
+}
+
+.explore-list a {
+    text-decoration: none;
+}
+
+.bk-button {
+    background-color: #CEDD56;
+}
+
+.bk-button:hover {
+    background-color: #aebd3b;
+}
+
+/*
+#3C3E20
+#E8F0CE
+#677338
+#CEDD56
+#D45564
+*/
