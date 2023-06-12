@@ -11,30 +11,38 @@ window.onload = function () {
             dataArr[p[0]] = p[1];
         }
 
-        if (!dataArr["num"] || dataArr["num"] <= 0) {
+        num = dataArr["num"];
+        dateStr = dataArr["date"];
+        timeStr = dataArr["time"];
+
+        date = new Date(dataArr["date"].replace("-", "/"));
+        s = dateStr + "T" + timeStr;
+        datetime = new Date(s);
+
+        today = new Date();
+        today2 = new Date(today.toString());
+
+        todayWithoutHours = today2.setHours(0, 0, 0, 0);
+
+        if (!num || num <= 0) {
             document.querySelector("#num").focus();
             document.querySelector("#outputAvailability").innerHTML = "";
             document.querySelector("#errors").innerHTML = "Enter valid number of people.";
             return;
         }
 
-        // TODO: Date Validation
-
-        //console.log(Date.parse(dataArr["date"].replace("-", "/") + " " + dataArr["date"] + " GMT"));
-
-        if (!dataArr["date"]) {
-            // || new Date(dataArr["date"]) > new Date(Date.now())) {
+        if (!dateStr || new Date(date).getTime() < new Date(todayWithoutHours)) {
             document.querySelector("#date").focus();
             document.querySelector("#outputAvailability").innerHTML = "";
             document.querySelector("#errors").innerHTML = "Enter valid date.";
             return;
         }
 
-        if (!dataArr["time"] || (new Date(dataArr["date"]) === new Date() && dataArr["time"] < Date.now())) {
-            // TODO: check for WORK HOURS
+        // if           (----------the date chosen is the same as today---------)              (-----------------time is less then now-----------------)
+        if (!timeStr || (new Date(date).getTime() === new Date(todayWithoutHours).getTime() && new Date(datetime).getTime() < new Date(today).getTime())) {
             document.querySelector("#time").focus();
             document.querySelector("#outputAvailability").innerHTML = "";
-            document.querySelector("#errors").innerHTML = "Enter time.";
+            document.querySelector("#errors").innerHTML = "Enter valid time.";
             return;
         }
 
@@ -52,6 +60,7 @@ window.onload = function () {
             },
             success: function (response) {
                 document.querySelector("#errors").innerHTML = "";
+                document.querySelector("#outputAvailability").innerHTML = "";
 
                 data = JSON.parse(response);
 
@@ -63,6 +72,14 @@ window.onload = function () {
                 }
 
                 if (data.ID !== null && data.num !== -1) {
+                    workDay = new Date(data.dateStr).getDay();
+                    currentWorkingHours = data.working_hours[workDay];
+
+                    if (data.time < currentWorkingHours[0] || data.time > currentWorkingHours[1]) {
+                        document.querySelector("#errors").innerHTML = "Restaurant is closed at this time. Please choose another.";
+                        return;
+                    }
+
                     if (dataArr["num"] === data.num) {
                         output = '<span class="text-success">There is a table available!</span>' + "<br>" + "Click 'Submit reservation' to send the reservation for:<br>" + "<strong>" + data.date + " at " + data.time + " in " + data.restaurant + " for " + data.num + " " + people + "</strong>";
                     } else {

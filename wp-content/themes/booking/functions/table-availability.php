@@ -19,6 +19,7 @@ function bk_find_table($restaurant_id, $number_of_people, $date, $time)
                 'key' => 'number_of_people',
                 'value' => $number_of_people,
                 'compare' => '>=',
+                'type' => 'NUMERIC'
             ],
         ],
 
@@ -84,8 +85,16 @@ function bk_find_table($restaurant_id, $number_of_people, $date, $time)
     // $best_table['num'] = get_field("number_of_people", $all_suitable_tables[array_key_first($all_suitable_tables)]->ID);
     $best_table['num'] = get_field("number_of_people", $all_suitable_tables[0]->ID);
     $best_table['date'] = $current_datetime->format('F j, Y');
+    $best_table['dateStr'] = $current_datetime->format('Y-m-d');
     $best_table['time'] = $current_datetime->format('H:i');
     $best_table['restaurant'] = get_the_title(get_post_meta($all_suitable_tables[0]->ID, 'restaurant', true));
+
+    $ranges = preg_split('/\r\n|\r|\n/',  get_field('working_hours', get_post_meta($all_suitable_tables[0]->ID, 'restaurant', true)));
+    $new_ranges = [];
+    foreach ($ranges as $range) {
+        $new_ranges[] = explode(' - ', $range);
+    }
+    $best_table['working_hours'] = $new_ranges;
 
     return $best_table;
 }
