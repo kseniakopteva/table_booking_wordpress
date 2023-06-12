@@ -20,7 +20,7 @@
                                 <p class="card-text"><?php echo get_field('description') ?></p>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
-                                <span>Atrodas: <?php the_terms($post->ID, 'cities') ?>, <?php echo get_field('location') ?></span>
+                                <span>Atrodas: <?php echo get_field('location') ?>, <?php the_terms($post->ID, 'cities') ?></span>
                                 <a href="<?php the_permalink() ?>" class="btn bk-button">More</a>
                             </div>
                         </div>

@@ -2,33 +2,39 @@
 window.onload = function () {
     AOS.init();
     document.querySelector("#checkIfAvailable").addEventListener("click", () => {
-        let formData = new FormData(document.querySelector("#reservationForm"));
+        let fd = new FormData(document.querySelector("#reservationForm"));
 
-        let data = "";
-        for (var p of formData) {
-            data += p[0] + "^" + p[1] + "|";
-        }
         dataArr = [];
-        for (var p of formData) {
+        let formDataStr = "";
+        for (var p of fd) {
+            formDataStr += p[0] + "^" + p[1] + "|";
             dataArr[p[0]] = p[1];
         }
 
-        // console.log(data);
-        if (!dataArr["num"]) {
+        if (!dataArr["num"] || dataArr["num"] <= 0) {
+            document.querySelector("#num").focus();
             document.querySelector("#outputAvailability").innerHTML = "";
-            document.querySelector("#errors").innerHTML = "Enter number of people!!!";
+            document.querySelector("#errors").innerHTML = "Enter valid number of people.";
             return;
         }
+
+        // TODO: Date Validation
+
+        //console.log(Date.parse(dataArr["date"].replace("-", "/") + " " + dataArr["date"] + " GMT"));
 
         if (!dataArr["date"]) {
+            // || new Date(dataArr["date"]) > new Date(Date.now())) {
+            document.querySelector("#date").focus();
             document.querySelector("#outputAvailability").innerHTML = "";
-            document.querySelector("#errors").innerHTML = "Enter date!!!";
+            document.querySelector("#errors").innerHTML = "Enter valid date.";
             return;
         }
 
-        if (!dataArr["time"]) {
+        if (!dataArr["time"] || (new Date(dataArr["date"]) === new Date() && dataArr["time"] < Date.now())) {
+            // TODO: check for WORK HOURS
+            document.querySelector("#time").focus();
             document.querySelector("#outputAvailability").innerHTML = "";
-            document.querySelector("#errors").innerHTML = "Enter time!!!";
+            document.querySelector("#errors").innerHTML = "Enter time.";
             return;
         }
 
@@ -42,22 +48,48 @@ window.onload = function () {
             dataType: "text",
             data: {
                 action: "checkIfAvailable",
-                data: data,
+                data: formDataStr,
             },
             success: function (response) {
                 document.querySelector("#errors").innerHTML = "";
-                //console.log(response);
-                if (JSON.parse(response).ID !== null && JSON.parse(response).num !== -1) {
-                    if (dataArr["num"] === JSON.parse(response).num) {
-                        document.querySelector("#outputAvailability").innerHTML = "There is a table available!<br>Click 'Submit reservation' to send the reservation for " + JSON.parse(response).date + " at " + JSON.parse(response).time;
+
+                data = JSON.parse(response);
+
+                people = "";
+                if (data.num === 1) {
+                    people = "person";
+                } else {
+                    people = "people";
+                }
+
+                if (data.ID !== null && data.num !== -1) {
+                    if (dataArr["num"] === data.num) {
+                        output = '<span class="text-success">There is a table available!</span>' + "<br>" + "Click 'Submit reservation' to send the reservation for:<br>" + "<strong>" + data.date + " at " + data.time + " in " + data.restaurant + " for " + data.num + " " + people + "</strong>";
                     } else {
-                        document.querySelector("#outputAvailability").innerHTML = "Only a table with seats for " + JSON.parse(response).num + " people is available. <br>Click 'Submit reservation' to send the reservation for " + JSON.parse(response).date + " at " + JSON.parse(response).time;
+                        output =
+                            '<span class="text-success">There is a table with seats for ' +
+                            data.num +
+                            " people available!</span>" +
+                            "<br>" +
+                            "Click 'Submit reservation' to send the reservation for <strong>" +
+                            data.date +
+                            " at " +
+                            data.time +
+                            " in " +
+                            data.restaurant +
+                            " for " +
+                            data.num +
+                            " people</strong>";
                     }
                     document.querySelector("#reserveSubmitBtn").disabled = false;
                 } else {
-                    if (JSON.parse(response).num === -1) document.querySelector("#outputAvailability").innerHTML = "There are no tables available for this amount of people.";
-                    else document.querySelector("#outputAvailability").innerHTML = "There are no tables available!";
+                    if (data.num === -1) {
+                        output = "There are no tables available for this amount of people.";
+                    } else {
+                        output = "There are no tables available!";
+                    }
                 }
+                document.querySelector("#outputAvailability").innerHTML = output;
             },
         });
     });

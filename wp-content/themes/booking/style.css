@@ -48,6 +48,17 @@ footer {
     background-color: #aebd3b;
 }
 
+.bk-search-form {
+    font-weight: bold;
+}
+
+.bk-search-form input, .bk-search-form select {
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    padding: 0.375rem 0.75rem;
+    display: block;
+}
+
 /*
 #3C3E20
 #E8F0CE
