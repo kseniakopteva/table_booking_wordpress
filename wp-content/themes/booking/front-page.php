@@ -7,9 +7,9 @@
 
     <form role="search" method="GET" action="<?php echo esc_url(home_url('/')) ?>" class="fs-5 d-flex justify-content-center align-items-center bk-search-form" id="advanced-searchform">
         <div class="d-flex align-items-center justify-content-center">
-            On <input class="p-2 m-2" type="date" name="date" id="date" disabled>
-            at <input class="p-2 m-2" type="time" name="time" id="time" disabled> for
-            <input class="p-2 m-2" type="number" name="num" id="num" style="width:50px" disabled> people in
+            <!-- On <input class="p-2 m-2" type="date" name="date" id="date" disabled> -->
+            <!-- at <input class="p-2 m-2" type="time" name="time" id="time" disabled> for -->
+            <!-- <input class="p-2 m-2" type="number" name="num" id="num" style="width:50px" disabled> people in -->
             Find restaurants of
             <select class="p-2 m-2" name="cities" id="cities">
                 <!-- <option value="any">Any City</option> -->
