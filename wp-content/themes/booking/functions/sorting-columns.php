@@ -1,7 +1,11 @@
 <?php
 
-if (is_admin() && 'edit.php' == $pagenow && 'MY_POST_TYPE' == $_GET['post_type']) {
-    add_action('pre_get_posts', 'bk_sort_reservation_column_query');
+
+if (is_admin() && 'edit.php' == $pagenow) {
+    if (!empty($_GET['post_type'])) {
+        if ('reservations' == $_GET['post_type'])
+            add_action('pre_get_posts', 'bk_sort_reservation_column_query');
+    }
 }
 
 function bk_set_sortable_reservation_columns($columns)

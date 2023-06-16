@@ -129,5 +129,34 @@ require_once(__DIR__ . '/functions/admin-post.php');
 
 function bk_get_excerpt($text)
 {
-	echo substr($text, 0, 60) . '...';
+	echo substr($text, 0, 60);
+}
+
+add_action('pre_get_posts', 'query_set_only_author');
+function query_set_only_author($wp_query)
+{
+	global $pagenow;
+	global $current_user;
+	if (is_admin() && !current_user_can('edit_others_posts') && ($pagenow == 'edit.php' || $pagenow == 'upload.php')) {
+		$wp_query->set('author', $current_user->ID);
+	}
+}
+
+add_filter('ajax_query_attachments_args', 'show_current_user_attachments');
+function show_current_user_attachments($query)
+{
+	$user_id = get_current_user_id();
+	if ($user_id && !current_user_can('activate_plugins') && !current_user_can('edit_others_posts')) {
+		$query['author'] = $user_id;
+	}
+	return $query;
+}
+
+add_filter('acf/fields/relationship/query/name=restaurant', 'tables_restaurant_dropdown', 10, 3);
+function tables_restaurant_dropdown($query, $field, $post_id)
+{
+	// get posts for current logged in user
+	$query['author'] = get_current_user_id();
+
+	return $query;
 }

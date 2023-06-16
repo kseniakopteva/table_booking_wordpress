@@ -39,7 +39,8 @@ function bk_restaurants_custom_column($column, $post_id)
             echo get_post_meta($post_id, 'location', true);
             break;
         case 'description':
-            echo bk_get_excerpt(get_post_meta($post_id, 'description', true)) . ' ... ';
+            if (empty(get_post_meta($post_id, 'description', true))) echo '-';
+            else echo bk_get_excerpt(get_post_meta($post_id, 'description', true)) . '...';
             break;
     }
 }

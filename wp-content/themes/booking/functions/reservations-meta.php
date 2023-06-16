@@ -14,15 +14,30 @@ function bk_reservations_meta_boxes()
         'bk_time' => 'Time',
         'bk_restaurantID' => 'Restaurant',
     ];
-    foreach ($fields as $slug => $text) {
+    global $pagenow;
+    if ($pagenow !== 'post-new.php')
+        foreach ($fields as $slug => $text) {
+            add_meta_box(
+                $slug,
+                $text,
+                'bk_reservations_meta_cb',
+                'reservations',
+                'advanced',
+                'default',
+                $slug
+            );
+        }
+    else {
         add_meta_box(
-            $slug,
-            $text,
-            'bk_reservations_meta_cb',
+            'msg',
+            'Warning',
+            function () {
+                echo '<p style="background-color: yellow">Please enter new reservations through the form on the website!</p>';
+            },
             'reservations',
             'advanced',
             'default',
-            $slug
+            'msg'
         );
     }
 }
