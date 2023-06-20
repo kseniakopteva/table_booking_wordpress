@@ -53,7 +53,9 @@ function bk_add_reservations_acf_columns($columns)
         'date_and_time' => __('Reservation date and time'),
         'restaurant' => __('Restaurant'),
         'table' => __('Table'),
-        'num' => __('Number of People')
+        'num' => __('Number of People'),
+        'name' => __('Name'),
+        'phone' => __('Phone'),
     ]);
 }
 add_filter('manage_reservations_posts_columns', 'bk_add_reservations_acf_columns');
@@ -72,6 +74,12 @@ function bk_reservations_custom_column($column, $post_id)
             break;
         case 'num':
             echo get_post_meta($post_id, 'bk_num', true);
+            break;
+        case 'name':
+            echo esc_html(get_post_meta($post_id, 'bk_name', true));
+            break;
+        case 'phone':
+            echo esc_html(get_post_meta($post_id, 'bk_phone', true));
             break;
     }
 }

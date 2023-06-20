@@ -133,12 +133,42 @@ function bk_get_excerpt($text)
 }
 
 add_action('pre_get_posts', 'query_set_only_author');
-function query_set_only_author($wp_query)
+function query_set_only_author($query)
 {
 	global $pagenow;
 	global $current_user;
-	if (is_admin() && !current_user_can('edit_others_posts') && ($pagenow == 'edit.php' || $pagenow == 'upload.php')) {
-		$wp_query->set('author', $current_user->ID);
+	global $typenow;
+	if ($query->is_main_query() && is_admin() && !current_user_can('activate_plugins') && !current_user_can('edit_others_posts') && ($pagenow == 'edit.php' || $pagenow == 'upload.php')) {
+		if ('reservations' != $typenow) {
+			$query->set('author', $current_user->ID);
+		} else {
+
+			$this_users_restaurants =  (new WP_Query([
+				'numberposts' => -1,
+				'post_type' => 'restaurants',
+				'author' => $current_user->ID
+			]))->posts;
+
+			$ids = [];
+
+			foreach ($this_users_restaurants as $res) :
+				// var_dump($res);
+				$ids[] = $res->ID; //get_post_meta($res->ID, 'bk_restaurantID', true);
+			endforeach;
+
+			$query->set('meta_key', 'bk_restaurantID');
+			$query->set('meta_value_num ', $ids);
+			$query->set('meta_compare  ', 'IN');
+
+			$meta_query = [
+				'key'     => 'bk_restaurantID',
+				'value'   => $ids,
+				'compare' => 'IN',
+			];
+
+			// Set the meta query to the complete, altered query
+			$query->set('meta_query', $meta_query);
+		}
 	}
 }
 
@@ -152,11 +182,11 @@ function show_current_user_attachments($query)
 	return $query;
 }
 
-add_filter('acf/fields/relationship/query/name=restaurant', 'tables_restaurant_dropdown', 10, 3);
-function tables_restaurant_dropdown($query, $field, $post_id)
+add_filter('acf/fields/post_object/query/name=restaurant', 'tables_restaurant_dropdown', 10, 3);
+function tables_restaurant_dropdown($args, $field, $post_id)
 {
 	// get posts for current logged in user
-	$query['author'] = get_current_user_id();
+	$args['author'] = get_current_user_id();
 
-	return $query;
+	return $args;
 }
